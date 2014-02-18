@@ -27,9 +27,10 @@ import java.net.InetSocketAddress;
 abstract class AbstractEpollChannel extends AbstractChannel {
     private static final ChannelMetadata DATA = new ChannelMetadata(false);
     private final int readFlag;
+    final int fd;
+
     protected int flags;
     protected volatile boolean active;
-    volatile int fd;
     int id;
 
     AbstractEpollChannel(int flag) {
@@ -66,7 +67,6 @@ abstract class AbstractEpollChannel extends AbstractChannel {
     protected void doClose() throws Exception {
         active = false;
         int fd = this.fd;
-        this.fd = -1;
         Native.close(fd);
     }
 
@@ -92,7 +92,7 @@ abstract class AbstractEpollChannel extends AbstractChannel {
 
     @Override
     public boolean isOpen() {
-        return fd != -1;
+        return active;
     }
 
     @Override
@@ -110,7 +110,7 @@ abstract class AbstractEpollChannel extends AbstractChannel {
 
     protected final void clearEpollIn() {
         if ((flags & readFlag) != 0) {
-            flags = ~readFlag;
+            flags = readFlag;
             ((EpollEventLoop) eventLoop()).modify(this);
         }
     }

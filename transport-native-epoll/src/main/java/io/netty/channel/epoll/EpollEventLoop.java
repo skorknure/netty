@@ -146,7 +146,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
      */
     void remove(AbstractEpollChannel ch) {
         assert inEventLoop();
-        if (ids.remove(ch.id) != null && ch.isOpen()) {
+        if (ids.remove(ch.id) != null) {
             // Remove the epoll. This is only needed if it's still open as otherwise it will be automatically
             // removed once the file-descriptor is closed.
             Native.epollCtlDel(epollFd, ch.fd);
