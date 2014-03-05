@@ -92,9 +92,12 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         this.parent = parent;
         this.addTaskWakesUp = addTaskWakesUp;
 
-        thread = threadFactory.newThread(new EventExecutorRunnable(this) {
+        thread = threadFactory.newThread(new Runnable() {
             @Override
             public void run() {
+                // set the EventExecutor for the running Thread
+                setCurrentEventExecutor(SingleThreadEventExecutor.this);
+
                 boolean success = false;
                 updateLastExecutionTime();
                 try {

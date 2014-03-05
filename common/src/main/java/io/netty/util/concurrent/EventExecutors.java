@@ -16,16 +16,20 @@
 package io.netty.util.concurrent;
 
 /**
- * Special {@link Runnable} which allows to retrieve a reference to the {@link .EventExecutor} later.
+ * Utility method for {@link EventExecutor}s.
  */
-public abstract class EventExecutorRunnable implements Runnable {
-    private final EventExecutor executor;
+public final class EventExecutors {
+    static final ThreadLocal<EventExecutor> EXECUTORS = new ThreadLocal<EventExecutor>();
 
-    EventExecutorRunnable(EventExecutor executor) {
-        this.executor = executor;
+    private EventExecutors() {
+        // utility class
     }
 
-    EventExecutor executor() {
-        return executor;
+    /**
+     * Returns the {@link io.netty.util.concurrent.EventExecutor} for the calling {@link Thread} or {@code null} if
+     * non is used for the {@link Thread}.
+     */
+    public static EventExecutor current() {
+        return EXECUTORS.get();
     }
 }

@@ -17,7 +17,7 @@
 package io.netty.buffer;
 
 import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.EventExecutorThread;
+import io.netty.util.concurrent.EventExecutors;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.internal.PlatformDependent;
@@ -153,15 +153,13 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator {
             } else {
                 directArena = null;
             }
-
-            Thread current = Thread.currentThread();
-            if (current instanceof EventExecutorThread) {
-                // If the current Thread is an EventExecutorThread we use a cache as we can
+            EventExecutor executor = EventExecutors.current();
+            if (executor != null) {
+                // If the current Thread is assigned to an EventExecutor we can
                 // easily free the cached stuff again once the EventExecutor completes later.
                 final PoolThreadCache cache = new PoolThreadCache(
                         heapArena, directArena, tinyCacheSize, smallCacheSize, normalCacheSize,
                         DEFAULT_MAX_CACHE_SIZE, DEFAULT_MAX_CACHE_ARRAY_SIZE);
-                EventExecutor executor = ((EventExecutorThread) current).executor();
 
                 // free up cached resources when executor is terminated and so the Thread ends
                 executor.terminationFuture().addListener(new FutureListener<Object>() {
