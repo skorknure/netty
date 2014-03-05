@@ -28,20 +28,17 @@ final class PoolThreadCache {
     final PoolArena<byte[]> heapArena;
     final PoolArena<ByteBuffer> directArena;
 
-    // Used for bitshifting when calculate the index of normal caches later
-    private final int valNormalDirect;
-    private final int valNormalHeap;
-
-    // We cold also create them lazy but this would make the code more clumby and also introduce more branches when
-    // check if allocation // adding is possible so not sure it worth it at all.
+    // Hold the caches for the different size classes, which are tiny, small and normal.
     private final PoolChunkCache<byte[]>[] tinySubPageHeapCaches;
     private final PoolChunkCache<byte[]>[] smallSubPageHeapCaches;
     private final PoolChunkCache<ByteBuffer>[] tinySubPageDirectCaches;
     private final PoolChunkCache<ByteBuffer>[] smallSubPageDirectCaches;
-
-    // Hold the caches for normal allocations
     private final PoolChunkCache<byte[]>[] normalHeapCaches;
     private final PoolChunkCache<ByteBuffer>[] normalDirectCaches;
+
+    // Used for bitshifting when calculate the index of normal caches later
+    private final int valNormalDirect;
+    private final int valNormalHeap;
 
     // TODO: Test if adding padding helps under contention
     //private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -173,13 +170,7 @@ final class PoolThreadCache {
         PoolChunkCache cache;
         if (area.isTinyOrSmall(normCapacity)) {
             if (PoolArena.isTiny(normCapacity)) {
-                //cache = cacheForTiny(area, normCapacity);
-                int idx = PoolArena.tinyIdx(normCapacity);
-                if (area.isDirect()) {
-                    cache = cache(tinySubPageDirectCaches, idx);
-                } else {
-                    cache = cache(tinySubPageHeapCaches, idx);
-                }
+                cache = cacheForTiny(area, normCapacity);
             } else {
                 cache = cacheForSmall(area, normCapacity);
             }
