@@ -16,6 +16,7 @@
 
 package io.netty.buffer;
 
+
 import java.nio.ByteBuffer;
 
 /**
@@ -85,9 +86,9 @@ final class PoolThreadCache {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static <T> SubPagePoolChunkCache<T>[] createSubPageCaches(int cacheSize, int numCaches) {
         if (cacheSize > 0) {
+            @SuppressWarnings("unchecked")
             SubPagePoolChunkCache<T>[] cache = new SubPagePoolChunkCache[numCaches];
             for (int i = 0; i < cache.length; i++) {
                 // TODO: maybe use cacheSize / cache.length
@@ -99,12 +100,13 @@ final class PoolThreadCache {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static <T> NormalPoolChunkCache<T>[] createNormalCaches(
             int cacheSize, int maxCacheSize, int maxCacheArraySize, int val, PoolArena<T> area) {
         if (cacheSize > 0) {
             int max = Math.min(area.chunkSize, maxCacheSize);
             int arraySize = Math.min(maxCacheArraySize, max / area.pageSize);
+
+            @SuppressWarnings("unchecked")
             NormalPoolChunkCache<T>[] cache = new NormalPoolChunkCache[arraySize];
             int size = area.pageSize;
             for (int i = 0; i < cache.length; i++) {
@@ -131,29 +133,26 @@ final class PoolThreadCache {
     /**
      * Try to allocate a tiny buffer out of the cache. Returns {@code true} if successful {@code false} otherwise
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    boolean allocateTiny(PoolArena area, PooledByteBuf buf, int reqCapacity, int normCapacity) {
+    boolean allocateTiny(PoolArena<?> area, PooledByteBuf<?> buf, int reqCapacity, int normCapacity) {
         return allocate(cacheForTiny(area, normCapacity), buf, reqCapacity);
     }
 
     /**
      * Try to allocate a small buffer out of the cache. Returns {@code true} if successful {@code false} otherwise
      */
-    @SuppressWarnings({ "unchecked", "rawtypes " })
-    boolean allocateSmall(PoolArena area, PooledByteBuf buf, int reqCapacity, int normCapacity) {
+    boolean allocateSmall(PoolArena<?> area, PooledByteBuf<?> buf, int reqCapacity, int normCapacity) {
         return allocate(cacheForSmall(area, normCapacity), buf, reqCapacity);
     }
 
     /**
      * Try to allocate a small buffer out of the cache. Returns {@code true} if successful {@code false} otherwise
      */
-    @SuppressWarnings({ "unchecked", "rawtypes " })
-    boolean allocateNormal(PoolArena area, PooledByteBuf buf, int reqCapacity, int normCapacity) {
+    boolean allocateNormal(PoolArena<?> area, PooledByteBuf<?> buf, int reqCapacity, int normCapacity) {
         return allocate(cacheForNormal(area, normCapacity), buf, reqCapacity);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes " })
-    private static boolean allocate(PoolChunkCache cache, PooledByteBuf buf, int reqCapacity) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static boolean allocate(PoolChunkCache<?> cache, PooledByteBuf buf, int reqCapacity) {
         if (cache == null) {
             // no cache found so just return false here
             return false;
@@ -166,8 +165,8 @@ final class PoolThreadCache {
      * Returns {@code true} if it fit into the cache {@code false} otherwise.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    boolean add(PoolArena area, PoolChunk chunk, long handle, int normCapacity) {
-        PoolChunkCache cache;
+    boolean add(PoolArena<?> area, PoolChunk chunk, long handle, int normCapacity) {
+        PoolChunkCache<?> cache;
         if (area.isTinyOrSmall(normCapacity)) {
             if (PoolArena.isTiny(normCapacity)) {
                 cache = cacheForTiny(area, normCapacity);
@@ -195,8 +194,7 @@ final class PoolThreadCache {
         free(normalHeapCaches);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void free(PoolChunkCache[] caches) {
+    private static void free(PoolChunkCache<?>[] caches) {
         if (caches == null) {
             return;
         }
@@ -205,12 +203,11 @@ final class PoolThreadCache {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void free(PoolChunkCache cache) {
+    private static void free(PoolChunkCache<?> cache) {
         if (cache == null) {
             return;
         }
-        cache.clear();
+        cache.free();
     }
 
     void freeUpIfNecessary() {
@@ -222,8 +219,7 @@ final class PoolThreadCache {
         freeUpIfNecessary(normalHeapCaches);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void freeUpIfNecessary(PoolChunkCache[] caches) {
+    private static void freeUpIfNecessary(PoolChunkCache<?>[] caches) {
         if (caches == null) {
             return;
         }
@@ -232,16 +228,14 @@ final class PoolThreadCache {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void freeUpIfNecessary(PoolChunkCache cache) {
+    private static void freeUpIfNecessary(PoolChunkCache<?> cache) {
         if (cache == null) {
             return;
         }
-        cache.freeUpIfNeeded();
+        cache.freeUpIfNecessary();
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private PoolChunkCache cacheForTiny(PoolArena area, int normCapacity) {
+    private PoolChunkCache<?> cacheForTiny(PoolArena<?> area, int normCapacity) {
         int idx = PoolArena.tinyIdx(normCapacity);
         if (area.isDirect()) {
             return cache(tinySubPageDirectCaches, idx);
@@ -249,8 +243,7 @@ final class PoolThreadCache {
         return cache(tinySubPageHeapCaches, idx);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private PoolChunkCache cacheForSmall(PoolArena area, int normCapacity) {
+    private PoolChunkCache<?> cacheForSmall(PoolArena<?> area, int normCapacity) {
         int idx = PoolArena.smallIdx(normCapacity);
         if (area.isDirect()) {
             return cache(smallSubPageDirectCaches, idx);
@@ -258,8 +251,7 @@ final class PoolThreadCache {
         return cache(smallSubPageHeapCaches, idx);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private PoolChunkCache cacheForNormal(PoolArena area, int normCapacity) {
+    private PoolChunkCache<?> cacheForNormal(PoolArena<?> area, int normCapacity) {
         int idx = normalCacheIdx(normCapacity >> valNormalDirect);
         if (area.isDirect()) {
             return cache(normalDirectCaches, idx);
@@ -279,7 +271,7 @@ final class PoolThreadCache {
      *
      * @param <T>
      */
-    static final class SubPagePoolChunkCache<T> extends PoolChunkCache<T> {
+    private static final class SubPagePoolChunkCache<T> extends PoolChunkCache<T> {
         SubPagePoolChunkCache(int size) {
             super(size);
         }
@@ -296,7 +288,7 @@ final class PoolThreadCache {
      *
      * @param <T>
      */
-    static final class NormalPoolChunkCache<T> extends PoolChunkCache<T> {
+    private static final class NormalPoolChunkCache<T> extends PoolChunkCache<T> {
         NormalPoolChunkCache(int size) {
             super(size);
         }
@@ -316,22 +308,39 @@ final class PoolThreadCache {
      *          entries. But updating the entries should be quite cheap.
      * @param <T>
      */
-    abstract static class PoolChunkCache<T> {
+    private abstract static class PoolChunkCache<T> {
         private final Entry<T>[] entries;
         private int head;
         private int tail;
-        private int allocations;
+        // Holds the number of allocations since the last freeUpIfNecessary() or free() call.
+        private long allocations;
 
         @SuppressWarnings("unchecked")
         PoolChunkCache(int size) {
-            if ((size & -size) != size) {
-                // check if power of two as this is needed for bitwise operations
-                throw new IllegalArgumentException("size must be power of two");
-            }
-
-            entries = new Entry[size];
+            entries = new Entry[powerOfTwo(size)];
             for (int i = 0; i < entries.length; i++) {
                 entries[i] = new Entry<T>();
+            }
+        }
+
+        // TODO: Maybe we want to add these helper methods to a utility class with some other stuff
+        private static boolean isPowerOfTwo(int val) {
+            return (val & -val) == val;
+        }
+
+        private static int powerOfTwo(int res) {
+            if (res == 0) {
+                return 2;
+            }
+            if (isPowerOfTwo(res)) {
+                return res;
+            }
+            for (int i = 0; ; i++) {
+                res >>= 1;
+                if (res == 1) {
+                    res <<= i + 2;
+                    return res;
+                }
             }
         }
 
@@ -357,7 +366,7 @@ final class PoolThreadCache {
         }
 
         /**
-         * Allocate something out of the cache if possible
+         * Allocate something out of the cache if possible and remove the entry from the cache.
          */
         public boolean allocate(PooledByteBuf<T> buf, int reqCapacity) {
             Entry<T> entry = entries[head];
@@ -375,7 +384,7 @@ final class PoolThreadCache {
         /**
          * Clear out this cache and free up all previous cached {@link PoolChunk}s and {@code handle}s.
          */
-        public void clear() {
+        public void free() {
             allocations = 0;
             for (int i = head;; i = nextIdx(i)) {
                 if (!freeEntry(entries[i])) {
@@ -388,8 +397,8 @@ final class PoolThreadCache {
         /**
          * Free up cached {@link PoolChunk}s if not allocated frequently enough.
          */
-        public void freeUpIfNeeded() {
-            int allocs = allocations;
+        public void freeUpIfNecessary() {
+            long allocs = allocations;
             allocations = 0;
 
             // free up all cached buffers until it match the allocation count over the last perioid
@@ -418,7 +427,10 @@ final class PoolThreadCache {
             return true;
         }
 
-        public int size()  {
+        /**
+         * Return the number of cached entries.
+         */
+        private int size()  {
             return tail - head & entries.length - 1;
         }
 
@@ -427,7 +439,7 @@ final class PoolThreadCache {
             return (index + 1) & entries.length - 1;
         }
 
-        static final class Entry<T> {
+        private static final class Entry<T> {
             PoolChunk<T> chunk;
             long handle;
         }
