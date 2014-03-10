@@ -16,17 +16,26 @@
 
 package io.netty.channel;
 
-import io.netty.util.internal.PlatformDependent;
-
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Skelton implementation of a {@link ChannelHandler}.
  */
 public abstract class ChannelHandlerAdapter implements ChannelHandler {
-    // Cache the result of @Sharable annotation detection to workaround a condition
+    // Cache the result of @Sharable annotation detection to workaround a condition. We use a ThreadLocal + HashMap
+    // to eliminate the volatile write/reads. Using differnent HashMap instances per Thread is good enough for us
+    // and the number of Threads are quite limited anyway.
+    //
     // See https://github.com/netty/netty/issues/2289
-    private static final Map<Class<?>, Boolean> SHARABLE_CACHE = PlatformDependent.newConcurrentHashMap();
+    private static final ThreadLocal<Map<Class<?>, Boolean>> SHARABLE_CACHE =
+            new ThreadLocal<Map<Class<?>, Boolean>>() {
+                @Override
+                protected Map<Class<?>, Boolean> initialValue() {
+                    // Start with small capacity to keep memory overhead as low as possible.
+                    return new HashMap<Class<?>, Boolean>(4);
+                }
+            };
 
     // Not using volatile because it's used only for a sanity check.
     boolean added;
@@ -37,10 +46,11 @@ public abstract class ChannelHandlerAdapter implements ChannelHandler {
      */
     public boolean isSharable() {
         Class<?> clazz = getClass();
-        Boolean sharable = SHARABLE_CACHE.get(clazz);
+        Map<Class<?>, Boolean> cache = SHARABLE_CACHE.get();
+        Boolean sharable = cache.get(clazz);
         if (sharable == null) {
             sharable = clazz.isAnnotationPresent(Sharable.class);
-            SHARABLE_CACHE.put(clazz, sharable);
+            cache.put(clazz, sharable);
         }
         return sharable;
     }
