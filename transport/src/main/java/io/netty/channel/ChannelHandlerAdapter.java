@@ -16,10 +16,17 @@
 
 package io.netty.channel;
 
+import io.netty.util.internal.PlatformDependent;
+
+import java.util.Map;
+
 /**
  * Skelton implementation of a {@link ChannelHandler}.
  */
 public abstract class ChannelHandlerAdapter implements ChannelHandler {
+    // Cache the result of @Sharable annotation detection to workaround a condition
+    // See https://github.com/netty/netty/issues/2289
+    private static final Map<Class<?>, Boolean> SHARABLE_CACHE = PlatformDependent.newConcurrentHashMap();
 
     // Not using volatile because it's used only for a sanity check.
     boolean added;
@@ -29,7 +36,13 @@ public abstract class ChannelHandlerAdapter implements ChannelHandler {
      * to different {@link ChannelPipeline}s.
      */
     public boolean isSharable() {
-        return getClass().isAnnotationPresent(Sharable.class);
+        Class<?> clazz = getClass();
+        Boolean sharable = SHARABLE_CACHE.get(clazz);
+        if (sharable == null) {
+            sharable = clazz.isAnnotationPresent(Sharable.class);
+            SHARABLE_CACHE.put(clazz, sharable);
+        }
+        return sharable;
     }
 
     /**
