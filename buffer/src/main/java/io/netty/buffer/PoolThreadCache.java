@@ -303,9 +303,6 @@ final class PoolThreadCache {
     /**
      * Cache of {@link PoolChunk} and handles which can be used to allocate a buffer without locking at all.
      *
-     * TODO:    Think about if it may make sense to make it a real circular buffer and start to replace the oldest
-     *          entries once it is full. This may give less fragmentations but the cost of extra updates of the
-     *          entries. But updating the entries should be quite cheap.
      * @param <T>
      */
     private abstract static class PoolChunkCache<T> {
