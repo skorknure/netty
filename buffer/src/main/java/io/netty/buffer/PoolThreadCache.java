@@ -320,25 +320,18 @@ final class PoolThreadCache {
             }
         }
 
-        // TODO: Maybe we want to add these helper methods to a utility class with some other stuff
-        private static boolean isPowerOfTwo(int val) {
-            return (val & -val) == val;
-        }
-
         private static int powerOfTwo(int res) {
-            if (res == 0) {
+            if (res <= 2) {
                 return 2;
             }
-            if (isPowerOfTwo(res)) {
-                return res;
-            }
-            for (int i = 0; ; i++) {
-                res >>= 1;
-                if (res == 1) {
-                    res <<= i + 2;
-                    return res;
-                }
-            }
+            res--;
+            res |= res >> 1;
+            res |= res >> 2;
+            res |= res >> 4;
+            res |= res >> 8;
+            res |= res >> 16;
+            res++;
+            return res;
         }
 
         /**
